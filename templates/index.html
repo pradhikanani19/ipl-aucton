@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPL Auction Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #4A90E2; /* Default Royal Blue */
+            --secondary-color: #FF7043; /* Accent Orange */
+            --background-color: #1F2023; /* Dark Gray */
+            --surface-color: #2C2D30;
+            --surface-hover: #3A3B3E;
+            --text-color: #F5F5F5;
+            --text-color-dark: #1F2023;
+            --border-color: #444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding: 20px;
+            transition: background-color 0.3s;
+        }
+
+        /* All elements that use --primary-color will now transition smoothly */
+        h1, .player-card, .player-details-content, .bid-box button, .controls input, .controls select, .leaderboard h3 {
+            transition: all 0.4s ease-in-out;
+        }
+
+        .dashboard-header h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .controls input,
+        .controls select {
+            background-color: var(--surface-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            min-width: 200px;
+        }
+        .controls input:focus,
+        .controls select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            align-items: flex-start;
+        }
+
+        .players {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            max-height: 75vh;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .player-card {
+            background-color: var(--surface-color);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .player-card:hover {
+            transform: translateY(-5px);
+            background-color: var(--surface-hover);
+        }
+        .player-card.selected {
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
+            /* The dynamic glow effect you wanted! */
+            box-shadow: 0 0 20px var(--primary-color);
+        }
+        .player-card .player-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: var(--text-color);
+        }
+        .player-card .player-team {
+            font-size: 0.9em;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .details, .leaderboard {
+            background-color: var(--surface-color);
+            border-radius: 10px;
+            padding: 25px;
+        }
+
+        .player-details-content .player-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 20px;
+            display: block;
+            border: 3px solid var(--primary-color);
+        }
+        .player-details-content h2 {
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .bid-box {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .bid-box button {
+            background-color: var(--primary-color);
+            color: var(--text-color-dark);
+            font-weight: 700;
+        }
+        .bid-box button:hover {
+            filter: brightness(1.2); /* Better hover for dynamic colors */
+        }
+
+        .leaderboard h3 {
+            color: var(--primary-color);
+        }
+
+        /* Other styles from previous version... */
+        .controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; }
+        .details-placeholder { display: flex; justify-content: center; align-items: center; min-height: 200px; font-size: 1.1em; opacity: 0.7; }
+        .player-details-content p { margin-bottom: 12px; font-size: 1.05em; }
+        .player-details-content p b { color: #aaa; width: 120px; display: inline-block; }
+        .bid-box input { flex-grow: 1; background-color: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 12px; border-radius: 8px; font-size: 1em; }
+        .bid-box button { border: none; padding: 0 20px; cursor: pointer; border-radius: 8px; font-size: 1em; }
+        .leaderboard ol { list-style: none; padding-left: 0; }
+        .leaderboard li { display: flex; justify-content: space-between; padding: 10px 5px; border-bottom: 1px solid var(--border-color); }
+        .leaderboard .leader-bid { color: var(--secondary-color); font-weight: 700; }
+        .loader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 999; }
+        .loader { border: 8px solid var(--surface-color); border-top: 8px solid var(--primary-color); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 1024px) { .main-container { grid-template-columns: 1fr; } .sidebar { position: static; } .players { max-height: none; } }
+    </style>
+</head>
+<body>
+
+    <div id="loader" class="loader-container"><div class="loader"></div></div>
+    <header class="dashboard-header"><h1>IPL Auction Pro</h1></header>
+
+    <div class="controls">
+        <input type="text" id="search" placeholder="Search player by name...">
+        <select id="teamFilter"><option value="">All Teams</option></select>
+        <select id="countryFilter"><option value="">All Countries</option></select>
+        <select id="sortFilter">
+            <option value="default">Sort By</option>
+            <option value="highest-bid">Highest Bid</option>
+            <option value="alphabetical">Alphabetical (A-Z)</option>
+        </select>
+    </div>
+
+    <main class="main-container">
+        <section class="players" id="players"></section>
+        <aside class="sidebar">
+            <section class="details" id="details"><div class="details-placeholder"><p>Select a player to view details</p></div></section>
+            <section class="leaderboard">
+                <h3>🏆 Top 5 Bids</h3>
+                <ol id="leaderboard-list"></ol>
+            </section>
+        </aside>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // --- NEW: Team color mapping ---
+            const teamColors = {
+                "RCB": "#EC1C24",  // Royal Challengers Bengaluru
+                "MI": "#007BFF",   // Mumbai Indians
+                "CSK": "#FDB913",  // Chennai Super Kings
+                "LSG": "#0059A4",  // Lucknow Super Giants
+                "GT": "#003366",   // Gujarat Titans
+                "DC": "#004C97",   // Delhi Capitals
+                "RR": "#EA1A85",   // Rajasthan Royals (Pink)
+                "KKR": "#3A225D",  // Kolkata Knight Riders
+                "PBKS": "#D71920",
+                "SRH": "#F26522"  
+            };
+            const defaultColor = "#4A90E2"; // Default color
+
+            let allPlayers = [];
+            const playersContainer = document.getElementById("players");
+            const detailsContainer = document.getElementById("details");
+            // ... other variable declarations from before
+
+            async function loadPlayers() { /* ... same as before ... */ }
+            function populateFilters() { /* ... same as before ... */ }
+            function displayPlayers(players) { /* ... same as before ... */ }
+
+            function showDetails(player) {
+                // --- UPDATED: Set theme color on player selection ---
+                const teamColor = teamColors[player.team] || defaultColor;
+                document.documentElement.style.setProperty('--primary-color', teamColor);
+
+                // The rest of the function is the same
+                currentlySelectedPlayer = player;
+                document.querySelectorAll('.player-card').forEach(card => card.classList.remove('selected'));
+                document.getElementById(`player-card-${player.id}`).classList.add('selected');
+
+                detailsContainer.innerHTML = `
+                    <div class="player-details-content">
+                        <img src="${player.image}" alt="${player.name}" class="player-image" onerror="this.src='https://via.placeholder.com/120/FFFFFF/000000?text=Error'">
+                        <h2>${player.name}</h2>
+                        <p><b>Team:</b> ${player.team || 'N/A'}</p>
+                        <p><b>Country:</b> ${player.nationality}</p>
+                        <p><b>Status:</b> ${player.capped_status}</p>
+                        <p><b>Base Price:</b> ₹${player.base_price.toLocaleString()}</p>
+                        <p><b>Winning Bid:</b> ₹${(player.winning_bid || 0).toLocaleString()}</p>
+                        <div class="bid-box">
+                            <input type="number" id="bidAmount" placeholder="Enter bid amount">
+                            <button onclick="placeBid(${player.id})">Place Bid</button>
+                        </div>
+                    </div>`;
+            }
+
+            function updateLeaderboard() { /* ... same as before ... */ }
+            window.placeBid = async function(playerId) { /* ... same as before ... */ }
+            function filterAndSortPlayers() { /* ... same as before ... */ }
+
+            // --- All other JS code remains the same ---
+            const leaderboardList = document.getElementById("leaderboard-list");
+            const loader = document.getElementById("loader");
+            const searchInput = document.getElementById("search");
+            const teamFilter = document.getElementById("teamFilter");
+            const countryFilter = document.getElementById("countryFilter");
+            const sortFilter = document.getElementById("sortFilter");
+            let currentlySelectedPlayer = null;
+
+            async function loadPlayers() {
+                loader.style.display = 'flex';
+                try {
+                    const res = await fetch("/players");
+                    allPlayers = await res.json();
+                    populateFilters();
+                    filterAndSortPlayers();
+                    updateLeaderboard();
+                } catch (error) {
+                    console.error("Failed to load players:", error);
+                } finally {
+                    loader.style.display = 'none';
+                }
+            }
+
+            function populateFilters() {
+                const teams = [...new Set(allPlayers.map(p => p.team))].sort();
+                const countries = [...new Set(allPlayers.map(p => p.nationality))].sort();
+                teamFilter.innerHTML = '<option value="">All Teams</option>';
+                countryFilter.innerHTML = '<option value="">All Countries</option>';
+                teams.forEach(team => { if(team) teamFilter.innerHTML += `<option value="${team}">${team}</option>`; });
+                countries.forEach(country => { if(country) countryFilter.innerHTML += `<option value="${country}">${country}</option>`; });
+            }
+
+            function displayPlayers(players) {
+                playersContainer.innerHTML = "";
+                players.forEach(p => {
+                    const card = document.createElement("div");
+                    card.className = "player-card";
+                    card.id = `player-card-${p.id}`;
+                    card.innerHTML = `<div class="player-name">${p.name}</div><div class="player-team">${p.team || 'Unsold'}</div>`;
+                    card.onclick = () => showDetails(p);
+                    playersContainer.appendChild(card);
+                });
+            }
+
+            function updateLeaderboard() {
+                const sortedByBid = [...allPlayers].filter(p => p.winning_bid > 0).sort((a, b) => b.winning_bid - a.winning_bid).slice(0, 5);
+                leaderboardList.innerHTML = "";
+                if (sortedByBid.length === 0) {
+                    leaderboardList.innerHTML = "<div class='details-placeholder' style='min-height: 50px;'>No bids yet.</div>";
+                    return;
+                }
+                sortedByBid.forEach(p => {
+                    leaderboardList.innerHTML += `<li><span>${p.name}</span><span class="leader-bid">₹${p.winning_bid.toLocaleString()}</span></li>`;
+                });
+            }
+            
+            window.placeBid = async function(playerId) {
+                const amountInput = document.getElementById("bidAmount");
+                if (!amountInput.value) { alert("Please enter a bid amount."); return; }
+
+                try {
+                    const res = await fetch("/bid", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ player_id: playerId, amount: amountInput.value })
+                    });
+                    const result = await res.json();
+
+                    if (res.ok) {
+                        const playerIndex = allPlayers.findIndex(p => p.id === playerId);
+                        if (playerIndex !== -1) {
+                            allPlayers[playerIndex] = result.player;
+                        }
+                        showDetails(result.player);
+                        updateLeaderboard();
+                        alert("Bid placed successfully!");
+                    } else {
+                        alert(`Error: ${result.error}`);
+                    }
+                } catch (error) {
+                    alert("An error occurred while placing the bid.");
+                }
+            }
+
+            function filterAndSortPlayers() {
+                const search = searchInput.value.toLowerCase();
+                const team = teamFilter.value;
+                const country = countryFilter.value;
+                const sort = sortFilter.value;
+
+                let filtered = allPlayers.filter(p =>
+                    p.name.toLowerCase().includes(search) &&
+                    (team === "" || p.team === team) &&
+                    (country === "" || p.nationality === country)
+                );
+
+                if (sort === 'highest-bid') filtered.sort((a, b) => (b.winning_bid || 0) - (a.winning_bid || 0));
+                if (sort === 'alphabetical') filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+                displayPlayers(filtered);
+
+                if (currentlySelectedPlayer && !filtered.some(p => p.id === currentlySelectedPlayer.id)) {
+                    detailsContainer.innerHTML = `<div class="details-placeholder"><p>Select a player to view details</p></div>`;
+                    document.documentElement.style.setProperty('--primary-color', defaultColor);
+                    currentlySelectedPlayer = null;
+                }
+            }
+
+            [searchInput, teamFilter, countryFilter, sortFilter].forEach(el => {
+                el.addEventListener("change", filterAndSortPlayers);
+            });
+            searchInput.addEventListener("input", filterAndSortPlayers);
+
+            loadPlayers();
+        });
+    </script>
+</body>
+</html>
